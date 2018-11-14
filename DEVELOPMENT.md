@@ -2,18 +2,21 @@
 
 ## Requirements
 
-* Node.js 8.0+
-* Npm 5.0+
+* Node.js 6.0+
+* Npm 6.0+
 
 _NOTE:_ we recommend using [nvm](https://github.com/creationix/nvm)
 
 ```sh
 brew install nvm
-nvm install 8.11
-nvm use 8.11
+nvm install 8.12
+nvm use 8.12
 ```
 
-## Setup
+## Tasks
+The following outlines the commands for common development tasks.
+
+### Setup
 
 ```sh
 git clone https://github.com/serverless/components.git
@@ -21,11 +24,12 @@ cd components
 npm install
 ```
 
-## `USE_ESNEXT` environment variable
+#### `USE_ESNEXT` environment variable
 
 You can export the `USE_ESNEXT` environment variable if you're using a Node.js version >=8 and want to work on the project without `build`ing / `watch`ing it.
 
-## Build
+
+### Build
 
 To build the project
 
@@ -33,7 +37,8 @@ To build the project
 npm run build
 ```
 
-## Watch
+
+### Watch
 
 To automatically re-build the project when files change
 
@@ -41,9 +46,19 @@ To automatically re-build the project when files change
 npm run watch
 ```
 
-## Cleanse
 
-To wipe out all installed modules as well as package-lock.json files, use the `cleanse` script.
+### Clean
+
+To clean and remove all built files
+
+```sh
+npm run clean
+```
+
+
+### Cleanse
+
+To wipe out all installed modules as well as `package-lock.json` files, use the `cleanse` script.
 
 To cleanse the project
 
@@ -51,7 +66,8 @@ To cleanse the project
 npm run cleanse
 ```
 
-## Tests
+
+### Test
 
 Run tests for the project
 
@@ -59,10 +75,20 @@ Run tests for the project
 npm test
 ```
 
-## Lint
+
+### Lint
 
 Run lint for the project
 
 ```sh
 npm run lint
+```
+
+
+#### Docs gen
+
+Run docs generation for the project
+
+```sh
+npm run docs:gen
 ```

@@ -1,10 +1,22 @@
 {
-  "name": "@serverless-components/registry",
-  "version": "0.2.0",
+  "name": "@serverless/registry",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
-    "test": "jest .",
-    "postinstall": "node postinstall.js"
+    "build": "bash ./scripts/build.sh",
+    "clean": "bash ./scripts/clean.sh",
+    "cleanse": "bash ./scripts/cleanse.sh",
+    "lint": "bash ./scripts/lint.sh",
+    "setup": "bash ./scripts/setup.sh",
+    "test": "bash ./scripts/test.sh",
+    "postinstall": "base ./scripts/postinstall.sh",
+    "prepare": "bash ./scripts/prepare.sh",
+    "prepublishOnly": "bash ./scripts/prepublishOnly.sh",
+    "watch": "bash ./scripts/watch.sh"
+  },
+  "dependencies": {
+    "@serverless/utils": "0.0.18",
+    "bluebird": "^3.5.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.1.0",
@@ -25,9 +37,5 @@
     "markdown-magic": "^0.1.25",
     "pre-commit": "^1.2.2",
     "prettier": "^1.14.3"
-  },
-  "dependencies": {
-    "@serverless/utils": "0.0.18",
-    "bluebird": "^3.5.1"
   }
 }
