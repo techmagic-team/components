@@ -1,13 +1,47 @@
-import { all, append, isEmpty, reduce } from '@serverless/utils'
+import { not, all, append, prop, isEmpty, reduce, filter, mapObjIndexed } from '@serverless/utils'
 import cloneGraph from './cloneGraph'
 import detectCircularDeps from './detectCircularDeps'
 
-const execNode = (iteratee, node, context) =>
-  iteratee(node, {
+const getParameters = (instance) => {
+  const requiredParams = filter((inputType) => !!inputType.required, prop('inputTypes', instance))
+  return mapObjIndexed((num, key) => instance.inputs[key], requiredParams)
+}
+
+const reportStatus = (iteratee, node, context) => {
+  const { prevInstance, nextInstance } = node
+
+  const componentName =
+    (nextInstance && nextInstance.constructor.name) ||
+    (prevInstance && prevInstance.constructor.name)
+
+  if (iteratee.name === 'deployNode') {
+    const params = getParameters(nextInstance)
+    context.log(
+      `Deploying "${componentName}" ${
+        not(isEmpty(params)) ? 'with parameters ' + JSON.stringify(params) : ''
+      }`
+    )
+  } else if (iteratee.name === 'removeNode') {
+    if (prevInstance) {
+      const params = getParameters(prevInstance)
+      context.log(
+        `Removing "${componentName}" ${
+          not(isEmpty(params)) ? 'with parameters ' + JSON.stringify(params) : ''
+        }`
+      )
+    }
+  }
+}
+
+const execNode = (iteratee, node, context) => {
+  reportStatus(iteratee, node, context)
+
+  return iteratee(node, {
     ...context,
     // replace `log` with `debug` so that component logs are hidden by default
     log: context.debug
   })
+}
 
 const execNodeIds = async (iteratee, nodeIds, graph, context) =>
   all(
