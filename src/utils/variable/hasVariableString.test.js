@@ -24,4 +24,8 @@ describe('#hasVariableString()', () => {
   it('should ignore bad syntax', () => {
     expect(hasVariableString('${abc.def')).toBe(false)
   })
+
+  it('should support OR (||) syntax', () => {
+    expect(hasVariableString("${abc || 'hello'}")).toBe(true)
+  })
 })

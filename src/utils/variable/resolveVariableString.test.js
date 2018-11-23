@@ -34,4 +34,15 @@ describe('#resolveVariableString()', () => {
       })
     ).toBe('dude, sweet')
   })
+
+  it('should be able to deal with OR (||) usages in variable resolutions', () => {
+    expect(resolveVariableString("Hello ${abc || 'world'}", { abc: false })).toBe('Hello world')
+    expect(resolveVariableString("Hello ${abc || 'world'}", { abc: undefined })).toBe('Hello world')
+    expect(resolveVariableString("Hello ${abc || 'world'}", { abc: null })).toBe('Hello world')
+    expect(resolveVariableString("Hello ${abc || 'world'}", { abc: 'false' })).toBe('Hello false')
+    expect(resolveVariableString("Hello ${abc || 'world'}", { abc: 'undefined' })).toBe(
+      'Hello undefined'
+    )
+    expect(resolveVariableString("Hello ${abc || 'world'}", { abc: 'null' })).toBe('Hello null')
+  })
 })

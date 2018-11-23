@@ -14,15 +14,21 @@ const matchVariable = (string) => {
   let expression
   let match
   let exact
+  let preferredValue
+  let defaultValue
   if (result) {
     expression = result[1]
     match = result[0]
     exact = result.input === result[0]
+    preferredValue = result[2]
+    defaultValue = result[3].length > 0 ? result[3].replace(/\'/g, '') : null
   }
   return {
     expression,
     match,
-    exact
+    exact,
+    preferredValue,
+    defaultValue
   }
 }
 

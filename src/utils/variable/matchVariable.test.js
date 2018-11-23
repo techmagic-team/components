@@ -5,7 +5,9 @@ describe('#matchVariable()', () => {
     expect(matchVariable('${abc}')).toEqual({
       expression: 'abc',
       exact: true,
-      match: '${abc}'
+      match: '${abc}',
+      preferredValue: 'abc',
+      defaultValue: null
     })
   })
 
@@ -13,7 +15,9 @@ describe('#matchVariable()', () => {
     expect(matchVariable('abc')).toEqual({
       expression: undefined,
       exact: undefined,
-      match: undefined
+      match: undefined,
+      preferredValue: undefined,
+      defaultValue: undefined
     })
   })
 
@@ -21,7 +25,31 @@ describe('#matchVariable()', () => {
     expect(matchVariable('hello ${abc} dude')).toEqual({
       expression: 'abc',
       exact: false,
-      match: '${abc}'
+      match: '${abc}',
+      preferredValue: 'abc',
+      defaultValue: null
+    })
+  })
+
+  describe('when using OR (||)', () => {
+    it('should exact match variable with only one word', () => {
+      expect(matchVariable("${abc || 'world'}")).toEqual({
+        expression: "abc || 'world'",
+        exact: true,
+        match: "${abc || 'world'}",
+        preferredValue: 'abc',
+        defaultValue: 'world'
+      })
+    })
+
+    it('should match variable whith surrounding text', () => {
+      expect(matchVariable("hello ${abc || 'world'}")).toEqual({
+        expression: "abc || 'world'",
+        exact: false,
+        match: "${abc || 'world'}",
+        preferredValue: 'abc',
+        defaultValue: 'world'
+      })
     })
   })
 })
