@@ -22,9 +22,15 @@ describe('AwsSnsTopic', () => {
     context = await createTestContext({ cwd })
     context = await context.loadProject()
     context = await context.loadApp()
-    AwsProvider = await context.loadType('AwsProvider')
-    AwsSnsTopic = await context.loadType('./')
-    provider = await context.construct(AwsProvider, {})
+    AwsProvider = await context.import('AwsProvider')
+    AwsSnsTopic = await context.import('./')
+    provider = await context.construct(AwsProvider, {
+      region: 'us-east-1',
+      credentials: {
+        accessKeyId: 'abc',
+        secretAccessKey: 'xyz'
+      }
+    })
   })
 
   it('should create topic if first deployment', async () => {
@@ -81,7 +87,7 @@ describe('AwsSnsTopic', () => {
     // NOTE BRN: To simulate what core does, we create an entirely new instance here but hydrate it with the previous instance
 
     let nextAwsSnsTopic = await context.construct(AwsSnsTopic, {
-      provider: await context.construct(AwsProvider, {}),
+      provider,
       topicName: 'myTopic',
       displayName: 'myNewTopicDisplayName',
       policy: {},
@@ -180,6 +186,26 @@ describe('AwsSnsTopic', () => {
     expect(res).toBe(undefined)
   })
 
+  it('shouldDeploy should return "undefined" if nothing changed and only required inputs are provided', async () => {
+    const inputs = {
+      topicName: 'myTopic',
+      provider
+    }
+    let oldComponent = await context.construct(AwsSnsTopic, inputs)
+    oldComponent = await context.defineComponent(oldComponent)
+    oldComponent = resolveComponentEvaluables(oldComponent)
+    await oldComponent.deploy(null, context)
+
+    const prevComponent = await deserialize(serialize(oldComponent, context), context)
+
+    let newComponent = await context.construct(AwsSnsTopic, inputs)
+    newComponent = await context.defineComponent(newComponent)
+    newComponent = resolveComponentEvaluables(newComponent)
+
+    const res = newComponent.shouldDeploy(prevComponent)
+    expect(res).toBe(undefined)
+  })
+
   it('shouldDeploy should return "replace" if "topic" changed', async () => {
     const inputs = {
       topicName: 'myTopic',
@@ -232,7 +258,7 @@ describe('AwsSnsTopic', () => {
       deliveryStatusAttributes: [],
       provider
     }
-    const ComponentType = await context.loadType('./')
+    const ComponentType = await context.import('./')
     let oldComponent = await context.construct(ComponentType, inputs)
     oldComponent = await context.defineComponent(oldComponent)
     oldComponent = resolveComponentEvaluables(oldComponent)

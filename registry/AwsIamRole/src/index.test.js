@@ -9,6 +9,8 @@ import {
   serialize
 } from '../../../src/utils'
 
+jest.setTimeout(10000)
+
 let context
 let provider
 let AwsIamRole
@@ -45,10 +47,16 @@ afterAll(() => {
 describe('AwsIamRole', () => {
   beforeEach(async () => {
     context = await createTestContext()
-    AwsIamRole = await context.loadType('./')
+    AwsIamRole = await context.import('./')
 
-    const AwsProvider = await context.loadType('AwsProvider')
-    provider = await context.construct(AwsProvider, {})
+    const AwsProvider = await context.import('AwsProvider')
+    provider = await context.construct(AwsProvider, {
+      region: 'us-east-1',
+      credentials: {
+        accessKeyId: 'abc',
+        secretAccessKey: 'xyz'
+      }
+    })
   })
 
   it('should throw if role name is greater than 64 characters', async () => {
@@ -73,7 +81,10 @@ describe('AwsIamRole', () => {
     const inputs = {
       roleName: 'abc',
       service: 'lambda.amazonaws.com',
-      provider
+      provider,
+      policy: {
+        arn: 'arn:aws:iam::aws:policy/AdministratorAccess'
+      }
     }
 
     let awsIamRole = await context.construct(AwsIamRole, inputs)
@@ -110,6 +121,56 @@ describe('AwsIamRole', () => {
     expect(sleep).toBeCalledWith(15000)
   })
 
+  it('should attach inline policy if specified', async () => {
+    const inputs = {
+      roleName: 'abc',
+      service: 'lambda.amazonaws.com',
+      provider,
+      policy: {
+        Version: '2012-10-17',
+        Statement: {
+          Action: ['*'],
+          Resource: ['*'],
+          Effect: 'Allow'
+        }
+      }
+    }
+
+    let awsIamRole = await context.construct(AwsIamRole, inputs)
+    awsIamRole = await context.defineComponent(awsIamRole)
+    awsIamRole = resolveComponentEvaluables(awsIamRole)
+
+    await awsIamRole.deploy(undefined, context)
+
+    const createRoleParams = {
+      RoleName: inputs.roleName,
+      Path: '/',
+      AssumeRolePolicyDocument: JSON.stringify({
+        Version: '2012-10-17',
+        Statement: {
+          Effect: 'Allow',
+          Principal: {
+            Service: inputs.service
+          },
+          Action: 'sts:AssumeRole'
+        }
+      })
+    }
+
+    const putRolePolicyParams = {
+      RoleName: inputs.roleName,
+      PolicyName: `${inputs.roleName}-policy`,
+      PolicyDocument: JSON.stringify(inputs.policy)
+    }
+
+    expect(AWS.mocks.createRoleMock).toHaveBeenCalledTimes(1)
+    expect(AWS.mocks.createRoleMock).toBeCalledWith(createRoleParams)
+    expect(AWS.mocks.putRolePolicyMock).toHaveBeenCalledTimes(1)
+    expect(AWS.mocks.putRolePolicyMock).toBeCalledWith(putRolePolicyParams)
+    expect(awsIamRole.arn).toEqual('arn:aws:iam::XXXXX:role/test-role')
+    expect(sleep).toBeCalledWith(15000)
+  })
+
   it('should update if role name has changed', async () => {
     let oldAwsIamRole = await context.construct(AwsIamRole, {
       roleName: 'old-role-name',
@@ -141,7 +202,10 @@ describe('AwsIamRole', () => {
     const inputs = {
       roleName: 'abc',
       service: 'apig.amazonaws.com',
-      provider
+      provider,
+      policy: {
+        arn: 'arn:aws:iam::aws:policy/AdministratorAccess'
+      }
     }
 
     let awsIamRole = await context.construct(AwsIamRole, inputs)
@@ -180,7 +244,10 @@ describe('AwsIamRole', () => {
     const inputs = {
       roleName: 'abc',
       service: 'lambda.amazonaws.com',
-      provider
+      provider,
+      policy: {
+        arn: 'arn:aws:iam::aws:policy/AdministratorAccess'
+      }
     }
 
     let awsIamRole = await context.construct(AwsIamRole, inputs)

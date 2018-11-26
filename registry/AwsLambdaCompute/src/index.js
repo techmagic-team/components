@@ -54,7 +54,7 @@ const getShimFile = (runtime) => {
 }
 
 const AwsLambdaCompute = async (SuperClass, superContext) => {
-  const AwsLambdaFunction = await superContext.loadType('AwsLambdaFunction')
+  const AwsLambdaFunction = await superContext.import('AwsLambdaFunction')
 
   return {
     async defineFunction(functionInstance, context) {
@@ -93,15 +93,16 @@ const AwsLambdaCompute = async (SuperClass, superContext) => {
 
       return context.construct(AwsLambdaFunction, inputs)
     },
+
     async defineSchedule(functionInstance, rate, context) {
-      const AwsEventsRule = await context.loadType('AwsEventsRule')
+      const AwsCloudWatchEventsRule = await context.import('AwsCloudWatchEventsRule')
       const inputs = {
         provider: this.provider,
         lambda: functionInstance,
         schedule: parseRate(rate),
         enabled: true
       }
-      return context.construct(AwsEventsRule, inputs)
+      return context.construct(AwsCloudWatchEventsRule, inputs)
     }
   }
 }

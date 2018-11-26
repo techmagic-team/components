@@ -6,7 +6,7 @@ import { readFileSync } from 'fs'
 import { deserialize, resolveComponentEvaluables, serialize } from '../../../src/utils'
 import { createTestContext } from '../../../test'
 
-jest.setTimeout(10000)
+jest.setTimeout(30000)
 
 jest.mock('@serverless/utils', () => ({
   ...require.requireActual('@serverless/utils'),
@@ -39,9 +39,15 @@ describe('AwsLambdaFunction', () => {
 
   beforeEach(async () => {
     context = await createTestContext({ cwd })
-    AwsProvider = await context.loadType('AwsProvider')
-    AwsLambdaFunction = await context.loadType('./')
-    provider = await context.construct(AwsProvider, {})
+    AwsProvider = await context.import('AwsProvider')
+    AwsLambdaFunction = await context.import('./')
+    provider = await context.construct(AwsProvider, {
+      region: 'us-east-1',
+      credentials: {
+        accessKeyId: 'abc',
+        secretAccessKey: 'xyz'
+      }
+    })
   })
 
   it('should pack lambda without shim', async () => {
@@ -181,7 +187,7 @@ describe('AwsLambdaFunction', () => {
     const prevAwsLambdaFunction = await deserialize(serialize(awsLambdaFunction, context), context)
 
     let nextAwsLambdaFunction = await context.construct(AwsLambdaFunction, {
-      provider: await context.construct(AwsProvider, {}),
+      provider,
       code: './code',
       functionName: 'hello',
       functionDescription: 'hello description',
@@ -262,7 +268,7 @@ describe('AwsLambdaFunction', () => {
     expect(prevAwsLambdaFunction.arn).toBe('abc:zxc')
 
     let nextAwsLambdaFunction = await context.construct(AwsLambdaFunction, {
-      provider: await context.construct(AwsProvider, {}),
+      provider,
       code: './code',
       functionName: 'hello',
       functionDescription: 'hello description',
@@ -318,7 +324,7 @@ describe('AwsLambdaFunction', () => {
     const prevAwsLambdaFunction = await deserialize(serialize(awsLambdaFunction, context), context)
 
     let nextAwsLambdaFunction = await context.construct(AwsLambdaFunction, {
-      provider: await context.construct(AwsProvider, {}),
+      provider,
       code: './code',
       functionName: 'world', // changed!
       functionDescription: 'hello description',
@@ -532,7 +538,7 @@ describe('AwsLambdaFunction', () => {
     const prevAwsLambdaFunction = await deserialize(serialize(awsLambdaFunction, context), context)
 
     let nextAwsLambdaFunction = await context.construct(AwsLambdaFunction, {
-      provider: await context.construct(AwsProvider, {}),
+      provider,
       code: './code',
       functionName: 'world', // changed!
       functionDescription: 'hello description',
@@ -591,7 +597,7 @@ describe('AwsLambdaFunction', () => {
     const prevAwsLambdaFunction = await deserialize(serialize(awsLambdaFunction, context), context)
 
     let nextAwsLambdaFunction = await context.construct(AwsLambdaFunction, {
-      provider: await context.construct(AwsProvider, {}),
+      provider,
       code: './code',
       functionName: 'hello',
       functionDescription: 'hello description',
@@ -652,7 +658,7 @@ describe('AwsLambdaFunction', () => {
     const prevAwsLambdaFunction = await deserialize(serialize(awsLambdaFunction, context), context)
 
     let nextAwsLambdaFunction = await context.construct(AwsLambdaFunction, {
-      provider: await context.construct(AwsProvider, {}),
+      provider,
       code: './code',
       functionName: 'hello',
       functionDescription: 'hello description',
@@ -713,7 +719,7 @@ describe('AwsLambdaFunction', () => {
     const prevAwsLambdaFunction = await deserialize(serialize(awsLambdaFunction, context), context)
 
     let nextAwsLambdaFunction = await context.construct(AwsLambdaFunction, {
-      provider: await context.construct(AwsProvider, {}),
+      provider,
       code: './code',
       functionName: 'hello',
       functionDescription: 'hello description',
@@ -774,7 +780,7 @@ describe('AwsLambdaFunction', () => {
     const prevAwsLambdaFunction = await deserialize(serialize(awsLambdaFunction, context), context)
 
     let nextAwsLambdaFunction = await context.construct(AwsLambdaFunction, {
-      provider: await context.construct(AwsProvider, {}),
+      provider,
       code: './code',
       functionName: 'hello',
       functionDescription: 'hello description',
@@ -858,5 +864,28 @@ describe('AwsLambdaFunction', () => {
     const children = await awsLambdaFunction.define(context)
     const role = resolveComponentEvaluables(children.role)
     expect(role.roleName).toBe(`${awsLambdaFunction.functionName}-execution-role`)
+    expect(role.policy).toEqual({
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Action: ['logs:CreateLogStream'],
+          Resource: [
+            `arn:aws:logs:us-east-1:account-id:log-group:/aws/lambda/${
+              awsLambdaFunction.functionName
+            }:*`
+          ],
+          Effect: 'Allow'
+        },
+        {
+          Action: ['logs:PutLogEvents'],
+          Resource: [
+            `arn:aws:logs:us-east-1:account-id:log-group:/aws/lambda/${
+              awsLambdaFunction.functionName
+            }:*:*`
+          ],
+          Effect: 'Allow'
+        }
+      ]
+    })
   })
 })

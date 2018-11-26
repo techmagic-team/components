@@ -1,4 +1,9 @@
 import path from 'path'
+
+// TODO: move this into @serverless/utils ?!
+import isTypeConstruct from '../../../dist/utils/type/isTypeConstruct'
+import isComponent from '../../../dist/utils/component/isComponent'
+
 import {
   append,
   map,
@@ -27,11 +32,12 @@ const resolveCodePath = (code, root) => {
 }
 
 const Service = async (SuperClass, superContext) => {
-  const Fn = await superContext.loadType('Function')
+  const Fn = await superContext.import('Function')
 
   return class extends SuperClass {
     async construct(inputs, context) {
       await super.construct(inputs, context)
+      // construct function instances
       this.functions = await map(
         async (func, alias) =>
           context.construct(Fn, {
@@ -41,6 +47,24 @@ const Service = async (SuperClass, superContext) => {
           }),
         or(this.functions, {})
       )
+      // construct component instances
+      this.components = await map(async (component, key) => {
+        if (isComponent(component)) {
+          return component
+        } else if (isTypeConstruct(component)) {
+          // eslint-disable-next-line no-shadow
+          const { type, inputs } = component
+          const Type = await context.import(type)
+          component = await context.construct(Type, inputs)
+          if (!isComponent(component)) {
+            throw new Error(
+              `The component "${key}" is not of type Component (it's of type ${component.name})`
+            )
+          }
+          return component
+        }
+        throw new Error(`The provided component definition ${JSON.stringify(component)} is invalid`)
+      }, or(this.components, {}))
     }
 
     async define() {

@@ -29,10 +29,16 @@ describe('AwsS3Website', () => {
 
   beforeEach(async () => {
     context = await createTestContext({ cwd })
-    AwsS3Website = await context.loadType('./')
+    AwsS3Website = await context.import('./')
 
-    const AwsProvider = await context.loadType('AwsProvider')
-    provider = await context.construct(AwsProvider, {})
+    const AwsProvider = await context.import('AwsProvider')
+    provider = await context.construct(AwsProvider, {
+      region: 'us-east-1',
+      credentials: {
+        accessKeyId: 'abc',
+        secretAccessKey: 'xyz'
+      }
+    })
   })
 
   it('should create bucket if first deployment', async () => {
