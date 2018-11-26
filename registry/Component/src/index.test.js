@@ -20,18 +20,52 @@ describe('Component', () => {
     Component = await context.import('./')
   })
 
-  it('should return components as children when calling define', async () => {
-    const component = await context.construct(Component, {})
+  describe('#define()', () => {
+    it('should return components as children when calling define', async () => {
+      const component = await context.construct(Component, {})
 
-    component.components = {
-      myComponent: {
-        name: 'abc'
+      component.components = {
+        myComponent: {
+          type: './',
+          inputs: {}
+        }
       }
-    }
 
-    const children = await component.define()
+      const children = await component.define()
 
-    expect(children).toEqual(component.components)
+      expect(children).toEqual(component.components)
+    })
+
+    it('should support child components defined at different properties', async () => {
+      const component = await context.construct(Component, {})
+
+      component.component1 = {
+        type: './',
+        inputs: {}
+      }
+
+      component.objectProp = {
+        component2: {
+          type: './',
+          inputs: {}
+        },
+        component3: {
+          type: './',
+          inputs: {}
+        }
+      }
+
+      component.arrayProp = [
+        { component4: { type: './', inputs: {} } },
+        { component5: { type: './', inputs: {} } }
+      ]
+
+      const children = await component.define()
+
+      expect(children.component1).toEqual(component.component1)
+      expect(children.objectProp).toEqual(component.objectProp)
+      expect(children.arrayProp).toEqual(component.arrayProp)
+    })
   })
 
   it('shouldDeploy should return deploy when prevInstance is null', async () => {
